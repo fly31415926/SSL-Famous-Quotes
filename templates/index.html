@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +13,13 @@
   <div class="app-container">
     <!-- Header -->
     <header class="app-header">
+      <div class="header-top-bar">
+        <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Light / Dark Mode" aria-label="Toggle Theme">
+          <span class="theme-icon" id="themeIcon">☀️</span>
+          <span class="theme-label" id="themeLabel">Light Mode</span>
+        </button>
+      </div>
+
       <div class="logo-area">
         <span class="logo-icon">📜</span>
         <h1>QuoteVault</h1>
@@ -102,9 +109,12 @@
         <button class="category-chip active" data-category="">All Categories</button>
       </div>
 
-      <!-- Search Results Header -->
+      <!-- Search Results Header with Export to CSV -->
       <div class="results-header">
         <span class="results-count" id="resultsCount">Showing 100 quotes</span>
+        <button class="btn btn-secondary btn-sm" id="exportCsvBtn" title="Download matching quotes as CSV file">
+          <span class="btn-icon">📥</span> Export to CSV
+        </button>
       </div>
 
       <!-- Quotes Grid -->

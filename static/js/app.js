@@ -6,6 +6,7 @@
 const state = {
   currentQuote: null,
   allQuotes: [],
+  currentQuotesList: [],
   categories: [],
   authors: [],
   activeCategory: "",
@@ -16,6 +17,10 @@ const state = {
 
 // DOM Elements
 const DOM = {
+  themeToggleBtn: document.getElementById("themeToggleBtn"),
+  themeIcon: document.getElementById("themeIcon"),
+  themeLabel: document.getElementById("themeLabel"),
+
   spotlightQuote: document.getElementById("spotlightQuote"),
   spotlightAuthor: document.getElementById("spotlightAuthor"),
   spotlightCategory: document.getElementById("spotlightCategory"),
@@ -32,6 +37,7 @@ const DOM = {
   resetFiltersBtn: document.getElementById("resetFiltersBtn"),
   categoryChips: document.getElementById("categoryChips"),
   resultsCount: document.getElementById("resultsCount"),
+  exportCsvBtn: document.getElementById("exportCsvBtn"),
   quotesGrid: document.getElementById("quotesGrid"),
   toast: document.getElementById("toast"),
 
@@ -39,6 +45,36 @@ const DOM = {
   totalCategoriesStat: document.getElementById("totalCategoriesStat"),
   totalAuthorsStat: document.getElementById("totalAuthorsStat")
 };
+
+// Theme Management (Light / Dark mode toggle)
+function initTheme() {
+  const savedTheme = localStorage.getItem("quotevault_theme") || "dark";
+  applyTheme(savedTheme);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("quotevault_theme", theme);
+
+  if (DOM.themeIcon && DOM.themeLabel) {
+    if (theme === "light") {
+      DOM.themeIcon.textContent = "🌙";
+      DOM.themeLabel.textContent = "Dark Mode";
+      DOM.themeToggleBtn.setAttribute("title", "Switch to Dark Mode");
+    } else {
+      DOM.themeIcon.textContent = "☀️";
+      DOM.themeLabel.textContent = "Light Mode";
+      DOM.themeToggleBtn.setAttribute("title", "Switch to Light Mode");
+    }
+  }
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+  const newTheme = currentTheme === "dark" ? "light" : "dark";
+  applyTheme(newTheme);
+  showToast(`Switched to ${newTheme === 'dark' ? 'Dark' : 'Light'} Mode ✨`);
+}
 
 // Category to CSS class helper
 function getCategoryClass(category) {
@@ -155,7 +191,8 @@ async function searchQuotes() {
   try {
     const res = await fetch(`/api/quotes/search?${params.toString()}`);
     const data = await res.json();
-    renderQuotesGrid(data.quotes || []);
+    state.currentQuotesList = data.quotes || [];
+    renderQuotesGrid(state.currentQuotesList);
   } catch (err) {
     console.error("Search failed:", err);
     DOM.quotesGrid.innerHTML = `
@@ -199,7 +236,9 @@ function renderQuotesGrid(quotes) {
         <span class="category-badge ${catClass}">${escapeHtml(item.category)}</span>
         <div class="card-btns">
           <button class="btn-card-action feature-btn" title="Spotlight this quote">⭐ Feature</button>
-          <button class="btn-card-action copy-btn" title="Copy quote">📋</button>
+          <button class="btn-card-action copy-btn" title="Copy quote to clipboard">
+            <span class="copy-icon">📋</span> <span class="copy-label">Copy</span>
+          </button>
         </div>
       </div>
     `;
@@ -211,13 +250,61 @@ function renderQuotesGrid(quotes) {
       showToast("Featured quote in spotlight!");
     });
 
-    // Copy this card quote
-    card.querySelector(".copy-btn").addEventListener("click", () => {
-      copyToClipboard(`"${item.quote}" — ${item.author}`);
+    // Copy to Clipboard with visual feedback on the card button
+    const copyBtn = card.querySelector(".copy-btn");
+    const copyLabel = card.querySelector(".copy-label");
+    copyBtn.addEventListener("click", async () => {
+      await copyToClipboard(`"${item.quote}" — ${item.author}`);
+      copyLabel.textContent = "Copied!";
+      copyBtn.classList.add("copied");
+      setTimeout(() => {
+        copyLabel.textContent = "Copy";
+        copyBtn.classList.remove("copied");
+      }, 1800);
     });
 
     DOM.quotesGrid.appendChild(card);
   });
+}
+
+// Utility: Export Current Quotes to CSV
+function exportQuotesToCSV() {
+  const quotesToExport = state.currentQuotesList && state.currentQuotesList.length > 0 
+    ? state.currentQuotesList 
+    : [];
+
+  if (!quotesToExport || quotesToExport.length === 0) {
+    showToast("No quotes available to export.");
+    return;
+  }
+
+  // Header row
+  const headers = ["ID", "Quote", "Author", "Category"];
+
+  // Data rows with quotes escaped according to RFC 4180
+  const rows = quotesToExport.map(q => [
+    q.id,
+    `"${(q.quote || '').replace(/"/g, '""')}"`,
+    `"${(q.author || '').replace(/"/g, '""')}"`,
+    `"${(q.category || '').replace(/"/g, '""')}"`
+  ]);
+
+  const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+
+  // Create downloadable file blob
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+
+  const dateStr = new Date().toISOString().slice(0, 10);
+  link.setAttribute("download", `quotevault_export_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  showToast(`Exported ${quotesToExport.length} quotes to CSV! 📥`);
 }
 
 // Utility: Escape HTML
@@ -234,7 +321,7 @@ async function copyToClipboard(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(text);
     } else {
-      // Fallback
+      // Fallback for older browsers
       const textarea = document.createElement("textarea");
       textarea.value = text;
       textarea.style.position = "fixed";
@@ -279,15 +366,29 @@ function debounce(fn, delay = 250) {
 
 // Event Listeners setup
 function setupEventListeners() {
+  // Theme Toggle Button
+  if (DOM.themeToggleBtn) {
+    DOM.themeToggleBtn.addEventListener("click", toggleTheme);
+  }
+
+  // Export to CSV Button
+  if (DOM.exportCsvBtn) {
+    DOM.exportCsvBtn.addEventListener("click", exportQuotesToCSV);
+  }
+
   // Next Quote Button
   DOM.nextQuoteBtn.addEventListener("click", () => {
     fetchRandomQuote(state.activeCategory);
   });
 
   // Copy Quote Button (Spotlight)
-  DOM.copyQuoteBtn.addEventListener("click", () => {
+  DOM.copyQuoteBtn.addEventListener("click", async () => {
     if (state.currentQuote) {
-      copyToClipboard(`"${state.currentQuote.quote}" — ${state.currentQuote.author}`);
+      await copyToClipboard(`"${state.currentQuote.quote}" — ${state.currentQuote.author}`);
+      DOM.copyText.textContent = "Copied!";
+      setTimeout(() => {
+        DOM.copyText.textContent = "Copy";
+      }, 1800);
     }
   });
 
@@ -378,10 +479,11 @@ function resetFilters() {
 
 // App Initialization
 async function initApp() {
+  initTheme();
   setupEventListeners();
   await loadFilterMetadata();
   await fetchRandomQuote();
-  await searchQuotes(); // Loads all initial 100 quotes in the grid
+  await searchQuotes();
 }
 
 // Start application when DOM is ready
