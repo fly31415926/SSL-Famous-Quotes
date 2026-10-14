@@ -35,7 +35,18 @@
 
     <!-- Main Spotlight: Random Quote Card -->
     <section class="spotlight-section">
-      <div class="section-label">Featured Spotlight</div>
+      <div class="spotlight-header-meta">
+        <div class="section-label">Featured Spotlight</div>
+        <div class="spotlight-controls">
+          <div class="font-size-controls" title="Adjust quote text size">
+            <span class="font-size-label">Text:</span>
+            <button type="button" class="btn-text-size" id="decreaseFontBtn" title="Decrease font size" aria-label="Decrease font size">A−</button>
+            <button type="button" class="btn-text-size" id="increaseFontBtn" title="Increase font size" aria-label="Increase font size">A+</button>
+          </div>
+          <span class="shortcut-badge" title="Shortcut: Space or R key"><kbd>Space</kbd> / <kbd>R</kbd> next</span>
+        </div>
+      </div>
+
       <div class="quote-card-spotlight" id="spotlightCard">
         <div class="quote-watermark">“</div>
         <div class="quote-content-wrapper">
@@ -49,14 +60,14 @@
         </div>
 
         <div class="card-actions">
-          <button class="btn btn-primary" id="nextQuoteBtn" title="Get another random quote">
+          <button class="btn btn-primary" id="nextQuoteBtn" title="Get another random quote (or press Space)">
             <span class="btn-icon">✨</span> Next Random Quote
           </button>
           <button class="btn btn-secondary" id="copyQuoteBtn" title="Copy quote to clipboard">
             <span class="btn-icon" id="copyIcon">📋</span> <span id="copyText">Copy</span>
           </button>
           <button class="btn btn-secondary" id="speakQuoteBtn" title="Read quote aloud">
-            <span class="btn-icon">🔊</span> Listen
+            <span class="btn-icon" id="speakIcon">🔊</span> <span id="speakText">Listen</span>
           </button>
         </div>
       </div>
@@ -128,6 +139,11 @@
       <p>QuoteVault • Built with Python Flask, Vanilla JavaScript & HTML/CSS</p>
     </footer>
   </div>
+
+  <!-- Floating Back to Top Button -->
+  <button class="back-to-top-btn" id="backToTopBtn" title="Scroll to top" aria-label="Back to top">
+    ↑
+  </button>
 
   <!-- Toast Notification -->
   <div class="toast" id="toast">Quote copied to clipboard!</div>

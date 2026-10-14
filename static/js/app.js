@@ -12,8 +12,11 @@ const state = {
   activeCategory: "",
   selectedAuthor: "",
   searchKeyword: "",
-  isLoading: false
+  isSpeaking: false,
+  fontSizeIndex: 2 // 0: 1.25rem, 1: 1.45rem, 2: 1.65rem (default), 3: 1.9rem, 4: 2.2rem
 };
+
+const FONT_SIZES = ["1.25rem", "1.45rem", "1.65rem", "1.9rem", "2.2rem"];
 
 // DOM Elements
 const DOM = {
@@ -27,8 +30,14 @@ const DOM = {
   nextQuoteBtn: document.getElementById("nextQuoteBtn"),
   copyQuoteBtn: document.getElementById("copyQuoteBtn"),
   speakQuoteBtn: document.getElementById("speakQuoteBtn"),
+  speakIcon: document.getElementById("speakIcon"),
+  speakText: document.getElementById("speakText"),
   copyIcon: document.getElementById("copyIcon"),
   copyText: document.getElementById("copyText"),
+
+  decreaseFontBtn: document.getElementById("decreaseFontBtn"),
+  increaseFontBtn: document.getElementById("increaseFontBtn"),
+  backToTopBtn: document.getElementById("backToTopBtn"),
 
   searchQuery: document.getElementById("searchQuery"),
   clearSearchBtn: document.getElementById("clearSearchBtn"),
@@ -94,6 +103,9 @@ function showToast(message = "Quote copied to clipboard!") {
 
 // Fetch a Random Quote
 async function fetchRandomQuote(category = "") {
+  // If speech is ongoing, stop it when transitioning quotes
+  stopSpeakingQuote();
+
   try {
     DOM.spotlightQuote.classList.add("fade-out");
     DOM.spotlightQuote.classList.remove("fade-in");
@@ -128,6 +140,17 @@ function displaySpotlightQuote(quote) {
   
   DOM.spotlightCategory.textContent = quote.category;
   DOM.spotlightCategory.className = `category-badge ${getCategoryClass(quote.category)}`;
+}
+
+// Font Size Controls for Spotlight Quote
+function setSpotlightFontSize(newIndex) {
+  state.fontSizeIndex = Math.max(0, Math.min(FONT_SIZES.length - 1, newIndex));
+  DOM.spotlightQuote.style.fontSize = FONT_SIZES[state.fontSizeIndex];
+  
+  DOM.decreaseFontBtn.disabled = (state.fontSizeIndex === 0);
+  DOM.increaseFontBtn.disabled = (state.fontSizeIndex === FONT_SIZES.length - 1);
+  DOM.decreaseFontBtn.style.opacity = state.fontSizeIndex === 0 ? "0.4" : "1";
+  DOM.increaseFontBtn.style.opacity = state.fontSizeIndex === FONT_SIZES.length - 1 ? "0.4" : "1";
 }
 
 // Populate Category & Author Filters
@@ -215,6 +238,7 @@ function renderQuotesGrid(quotes) {
         <div class="empty-state-icon">🔍</div>
         <h3>No matching quotes found</h3>
         <p>Try adjusting your search terms or clearing your filters.</p>
+        <button class="btn btn-secondary btn-sm" style="margin-top: 1rem;" onclick="resetFilters()">Clear All Filters</button>
       </div>
     `;
     return;
@@ -250,7 +274,7 @@ function renderQuotesGrid(quotes) {
       showToast("Featured quote in spotlight!");
     });
 
-    // Copy to Clipboard with visual feedback on the card button
+    // Copy to Clipboard with visual feedback on card button
     const copyBtn = card.querySelector(".copy-btn");
     const copyLabel = card.querySelector(".copy-label");
     copyBtn.addEventListener("click", async () => {
@@ -278,10 +302,7 @@ function exportQuotesToCSV() {
     return;
   }
 
-  // Header row
   const headers = ["ID", "Quote", "Author", "Category"];
-
-  // Data rows with quotes escaped according to RFC 4180
   const rows = quotesToExport.map(q => [
     q.id,
     `"${(q.quote || '').replace(/"/g, '""')}"`,
@@ -291,7 +312,6 @@ function exportQuotesToCSV() {
 
   const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
 
-  // Create downloadable file blob
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -321,7 +341,6 @@ async function copyToClipboard(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(text);
     } else {
-      // Fallback for older browsers
       const textarea = document.createElement("textarea");
       textarea.value = text;
       textarea.style.position = "fixed";
@@ -338,7 +357,15 @@ async function copyToClipboard(text) {
   }
 }
 
-// Speech Synthesis: Read Quote Aloud
+// Speech Synthesis: Start / Stop Toggle
+function toggleSpeech() {
+  if (state.isSpeaking) {
+    stopSpeakingQuote();
+  } else {
+    speakCurrentQuote();
+  }
+}
+
 function speakCurrentQuote() {
   if (!state.currentQuote) return;
   if (!('speechSynthesis' in window)) {
@@ -351,8 +378,37 @@ function speakCurrentQuote() {
   const utterance = new SpeechSynthesisUtterance(textToRead);
   utterance.rate = 0.95;
   utterance.pitch = 1.0;
+
+  utterance.onstart = () => {
+    state.isSpeaking = true;
+    DOM.speakQuoteBtn.classList.add("speaking");
+    DOM.speakIcon.textContent = "⏹";
+    DOM.speakText.textContent = "Stop";
+    DOM.speakQuoteBtn.setAttribute("title", "Click to stop playback");
+  };
+
+  utterance.onend = () => {
+    stopSpeakingQuote();
+  };
+
+  utterance.onerror = () => {
+    stopSpeakingQuote();
+  };
+
   window.speechSynthesis.speak(utterance);
-  showToast("Reading quote aloud 🔊");
+}
+
+function stopSpeakingQuote() {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  state.isSpeaking = false;
+  if (DOM.speakQuoteBtn) {
+    DOM.speakQuoteBtn.classList.remove("speaking");
+    DOM.speakIcon.textContent = "🔊";
+    DOM.speakText.textContent = "Listen";
+    DOM.speakQuoteBtn.setAttribute("title", "Read quote aloud");
+  }
 }
 
 // Debounce Utility
@@ -376,6 +432,14 @@ function setupEventListeners() {
     DOM.exportCsvBtn.addEventListener("click", exportQuotesToCSV);
   }
 
+  // Font Size Buttons
+  if (DOM.decreaseFontBtn) {
+    DOM.decreaseFontBtn.addEventListener("click", () => setSpotlightFontSize(state.fontSizeIndex - 1));
+  }
+  if (DOM.increaseFontBtn) {
+    DOM.increaseFontBtn.addEventListener("click", () => setSpotlightFontSize(state.fontSizeIndex + 1));
+  }
+
   // Next Quote Button
   DOM.nextQuoteBtn.addEventListener("click", () => {
     fetchRandomQuote(state.activeCategory);
@@ -392,10 +456,8 @@ function setupEventListeners() {
     }
   });
 
-  // Speak Quote Button
-  DOM.speakQuoteBtn.addEventListener("click", () => {
-    speakCurrentQuote();
-  });
+  // Speak / Stop Quote Button
+  DOM.speakQuoteBtn.addEventListener("click", toggleSpeech);
 
   // Search input live typing (debounced)
   const debouncedSearch = debounce(() => {
@@ -438,6 +500,34 @@ function setupEventListeners() {
   DOM.resetFiltersBtn.addEventListener("click", () => {
     resetFilters();
   });
+
+  // Floating Back to Top Button
+  if (DOM.backToTopBtn) {
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > 350) {
+        DOM.backToTopBtn.classList.add("visible");
+      } else {
+        DOM.backToTopBtn.classList.remove("visible");
+      }
+    });
+
+    DOM.backToTopBtn.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  // Keyboard Navigation: Space or R for next quote
+  window.addEventListener("keydown", (e) => {
+    const tag = document.activeElement ? document.activeElement.tagName : "";
+    if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") {
+      return; // Do not trigger when user is typing in form controls
+    }
+
+    if (e.key === " " || e.key === "r" || e.key === "R") {
+      e.preventDefault(); // Prevent page scroll on Space
+      fetchRandomQuote(state.activeCategory);
+    }
+  });
 }
 
 // Set active category and sync UI
@@ -445,7 +535,6 @@ function setCategory(category) {
   state.activeCategory = category;
   DOM.categorySelect.value = category;
 
-  // Update chip active states
   const chips = DOM.categoryChips.querySelectorAll(".category-chip");
   chips.forEach(chip => {
     if (chip.dataset.category === category) {

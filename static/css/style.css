@@ -208,13 +208,21 @@ body::before {
   margin-bottom: 3.5rem;
 }
 
+.spotlight-header-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .section-label {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--accent-primary);
   font-weight: 600;
-  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -223,6 +231,65 @@ body::before {
 .section-label::before {
   content: "•";
   font-size: 1.2rem;
+}
+
+.spotlight-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.font-size-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.font-size-label {
+  font-weight: 500;
+  margin-right: 0.15rem;
+}
+
+.btn-text-size {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-main);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+}
+
+.btn-text-size:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-active);
+}
+
+.shortcut-badge {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.shortcut-badge kbd {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: var(--text-muted);
 }
 
 .quote-card-spotlight {
@@ -263,7 +330,7 @@ blockquote {
   line-height: 1.5;
   color: var(--text-main);
   margin-bottom: 1.5rem;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease, font-size 0.2s ease;
 }
 
 blockquote.fade-out {
@@ -374,6 +441,21 @@ cite {
   color: var(--text-main);
   border-color: var(--border-active);
   background: rgba(99, 102, 241, 0.05);
+}
+
+/* Audio Speaking Pulse Animation */
+#speakQuoteBtn.speaking {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.5);
+  animation: pulse-speaking 1.2s infinite;
+}
+
+@keyframes pulse-speaking {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
 }
 
 /* Explorer Section */
@@ -535,7 +617,7 @@ select option {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
   gap: 1.25rem;
-  max-height: 750px;
+  max-height: 850px;
   overflow-y: auto;
   padding-right: 0.4rem;
 }
@@ -637,6 +719,42 @@ select option {
   background: rgba(16, 185, 129, 0.1) !important;
 }
 
+/* Floating Back to Top Button */
+.back-to-top-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  color: #ffffff;
+  border: none;
+  font-size: 1.25rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 6px 18px var(--accent-glow);
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.2s ease;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-to-top-btn.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.back-to-top-btn:hover {
+  background: var(--accent-primary-hover);
+  transform: translateY(-2px);
+}
+
 /* Empty State */
 .empty-state {
   grid-column: 1 / -1;
@@ -661,7 +779,7 @@ select option {
 .toast {
   position: fixed;
   bottom: 2rem;
-  right: 2rem;
+  left: 2rem;
   background: #10b981;
   color: #ffffff;
   padding: 0.75rem 1.25rem;
@@ -691,7 +809,7 @@ select option {
   font-size: 0.85rem;
 }
 
-/* Responsive */
+/* Responsive & Mobile Enhancements (Removes Inner Scroll Trap) */
 @media (max-width: 868px) {
   .filter-controls {
     grid-template-columns: 1fr;
@@ -704,5 +822,23 @@ select option {
   }
   .quote-card-spotlight {
     padding: 2rem 1.5rem;
+  }
+  .spotlight-header-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .quotes-grid {
+    max-height: none; /* Disables inner scroll container on mobile to prevent scroll trap */
+    overflow-y: visible;
+    padding-right: 0;
+  }
+  .back-to-top-btn {
+    bottom: 1.25rem;
+    right: 1.25rem;
+    width: 40px;
+    height: 40px;
   }
 }
