@@ -33,9 +33,15 @@ def get_random_quote():
     
     candidates = QUOTES
     if category:
-        candidates = [q for q in candidates if q.get("category", "").lower() == category]
+        candidates = [
+            q for q in candidates 
+            if q.get("category", "").lower() == category or q.get("category_cn", "").lower() == category
+        ]
     if author:
-        candidates = [q for q in candidates if author in q.get("author", "").lower()]
+        candidates = [
+            q for q in candidates 
+            if author in q.get("author", "").lower() or author in q.get("author_cn", "").lower()
+        ]
         
     if not candidates:
         return jsonify({"error": "No quotes match the specified criteria"}), 404
@@ -50,15 +56,24 @@ def search_quotes():
 
     results = QUOTES
     if category:
-        results = [quote for quote in results if quote.get("category", "").lower() == category]
+        results = [
+            quote for quote in results 
+            if quote.get("category", "").lower() == category or quote.get("category_cn", "").lower() == category
+        ]
     if author:
-        results = [quote for quote in results if author in quote.get("author", "").lower()]
+        results = [
+            quote for quote in results 
+            if author in quote.get("author", "").lower() or author in quote.get("author_cn", "").lower()
+        ]
     if q:
         results = [
             quote for quote in results
             if q in quote.get("quote", "").lower() 
             or q in quote.get("author", "").lower() 
             or q in quote.get("category", "").lower()
+            or q in quote.get("quote_cn", "").lower()
+            or q in quote.get("author_cn", "").lower()
+            or q in quote.get("category_cn", "").lower()
         ]
 
     return jsonify({
@@ -68,28 +83,28 @@ def search_quotes():
 
 @app.route("/api/categories", methods=["GET"])
 def get_categories():
-    cat_counts = {}
+    cat_map = {}
     for quote in QUOTES:
-        c = quote.get("category", "General")
-        cat_counts[c] = cat_counts.get(c, 0) + 1
+        en = quote.get("category", "General")
+        cn = quote.get("category_cn", en)
+        if en not in cat_map:
+            cat_map[en] = {"name": en, "name_cn": cn, "count": 0}
+        cat_map[en]["count"] += 1
     
-    categories = [
-        {"name": cat, "count": count}
-        for cat, count in sorted(cat_counts.items())
-    ]
+    categories = sorted(cat_map.values(), key=lambda x: x["name"])
     return jsonify(categories)
 
 @app.route("/api/authors", methods=["GET"])
 def get_authors():
-    author_counts = {}
+    author_map = {}
     for quote in QUOTES:
-        a = quote.get("author", "Unknown")
-        author_counts[a] = author_counts.get(a, 0) + 1
+        en = quote.get("author", "Unknown")
+        cn = quote.get("author_cn", en)
+        if en not in author_map:
+            author_map[en] = {"name": en, "name_cn": cn, "count": 0}
+        author_map[en]["count"] += 1
         
-    authors = [
-        {"name": auth, "count": count}
-        for auth, count in sorted(author_counts.items())
-    ]
+    authors = sorted(author_map.values(), key=lambda x: x["name"])
     return jsonify(authors)
 
 if __name__ == "__main__":

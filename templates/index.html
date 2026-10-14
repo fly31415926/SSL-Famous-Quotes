@@ -7,13 +7,21 @@
   <link rel="stylesheet" href="/static/css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,400;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@500;700&family=Playfair+Display:ital,wght@0,500;0,700;1,400;1,600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="app-container">
     <!-- Header -->
     <header class="app-header">
       <div class="header-top-bar">
+        <!-- Language Switcher -->
+        <div class="lang-switch" role="group" aria-label="Language selection">
+          <button type="button" class="lang-btn active" id="langEnBtn" data-lang="en">English</button>
+          <span class="lang-divider">/</span>
+          <button type="button" class="lang-btn" id="langZhBtn" data-lang="zh">中文</button>
+        </div>
+
+        <!-- Theme Toggle -->
         <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Light / Dark Mode" aria-label="Toggle Theme">
           <span class="theme-icon" id="themeIcon">☀️</span>
           <span class="theme-label" id="themeLabel">Light Mode</span>
@@ -22,28 +30,28 @@
 
       <div class="logo-area">
         <span class="logo-icon">📜</span>
-        <h1>QuoteVault</h1>
+        <h1 id="appTitle">QuoteVault</h1>
       </div>
-      <p class="tagline">Explore timeless wisdom from history's greatest thinkers, writers, and leaders.</p>
+      <p class="tagline" id="appTagline">Explore timeless wisdom from history's greatest thinkers, writers, and leaders.</p>
       
       <div class="stats-pills" id="statsPills">
-        <span class="stat-pill"><strong id="totalQuotesStat">100</strong> Quotes</span>
-        <span class="stat-pill"><strong id="totalCategoriesStat">6</strong> Categories</span>
-        <span class="stat-pill"><strong id="totalAuthorsStat">50+</strong> Authors</span>
+        <span class="stat-pill"><strong id="totalQuotesStat">100</strong> <span id="statQuotesLabel">Quotes</span></span>
+        <span class="stat-pill"><strong id="totalCategoriesStat">6</strong> <span id="statCategoriesLabel">Categories</span></span>
+        <span class="stat-pill"><strong id="totalAuthorsStat">50+</strong> <span id="statAuthorsLabel">Authors</span></span>
       </div>
     </header>
 
     <!-- Main Spotlight: Random Quote Card -->
     <section class="spotlight-section">
       <div class="spotlight-header-meta">
-        <div class="section-label">Featured Spotlight</div>
+        <div class="section-label" id="spotlightLabel">Featured Spotlight</div>
         <div class="spotlight-controls">
           <div class="font-size-controls" title="Adjust quote text size">
-            <span class="font-size-label">Text:</span>
+            <span class="font-size-label" id="fontSizeLabel">Text:</span>
             <button type="button" class="btn-text-size" id="decreaseFontBtn" title="Decrease font size" aria-label="Decrease font size">A−</button>
             <button type="button" class="btn-text-size" id="increaseFontBtn" title="Increase font size" aria-label="Increase font size">A+</button>
           </div>
-          <span class="shortcut-badge" title="Shortcut: Space or R key"><kbd>Space</kbd> / <kbd>R</kbd> next</span>
+          <span class="shortcut-badge" id="shortcutBadge" title="Shortcut: Space or R key"><kbd>Space</kbd> / <kbd>R</kbd> next</span>
         </div>
       </div>
 
@@ -61,7 +69,7 @@
 
         <div class="card-actions">
           <button class="btn btn-primary" id="nextQuoteBtn" title="Get another random quote (or press Space)">
-            <span class="btn-icon">✨</span> Next Random Quote
+            <span class="btn-icon">✨</span> <span id="nextQuoteText">Next Random Quote</span>
           </button>
           <button class="btn btn-secondary" id="copyQuoteBtn" title="Copy quote to clipboard">
             <span class="btn-icon" id="copyIcon">📋</span> <span id="copyText">Copy</span>
@@ -76,14 +84,14 @@
     <!-- Search & Filter Controls -->
     <section class="explorer-section">
       <div class="section-heading">
-        <h2>Explore & Search Quotes</h2>
-        <p>Filter through the archive by keyword, philosopher/author, or category.</p>
+        <h2 id="exploreTitle">Explore & Search Quotes</h2>
+        <p id="exploreSubtitle">Filter through the archive by keyword, philosopher/author, or category.</p>
       </div>
 
       <div class="filter-controls">
         <!-- Search Keyword Input -->
         <div class="control-group search-input-group">
-          <label for="searchQuery">Search Quote Text or Keyword</label>
+          <label for="searchQuery" id="searchLabel">Search Quote Text or Keyword</label>
           <div class="input-with-icon">
             <span class="input-icon">🔍</span>
             <input type="text" id="searchQuery" placeholder="Type words like 'courage', 'dreams', 'truth'..." autocomplete="off">
@@ -93,7 +101,7 @@
 
         <!-- Author Dropdown Filter -->
         <div class="control-group">
-          <label for="authorSelect">Author / Speaker</label>
+          <label for="authorSelect" id="authorFilterLabel">Author / Speaker</label>
           <select id="authorSelect">
             <option value="">All Authors</option>
           </select>
@@ -101,7 +109,7 @@
 
         <!-- Category Dropdown Filter -->
         <div class="control-group">
-          <label for="categorySelect">Category</label>
+          <label for="categorySelect" id="categoryFilterLabel">Category</label>
           <select id="categorySelect">
             <option value="">All Categories</option>
           </select>
@@ -110,7 +118,7 @@
         <!-- Reset Button -->
         <div class="control-group reset-group">
           <button class="btn btn-ghost" id="resetFiltersBtn" title="Reset all filters">
-            ↺ Reset Filters
+            <span id="resetFiltersText">↺ Reset Filters</span>
           </button>
         </div>
       </div>
@@ -124,7 +132,7 @@
       <div class="results-header">
         <span class="results-count" id="resultsCount">Showing 100 quotes</span>
         <button class="btn btn-secondary btn-sm" id="exportCsvBtn" title="Download matching quotes as CSV file">
-          <span class="btn-icon">📥</span> Export to CSV
+          <span class="btn-icon">📥</span> <span id="exportCsvText">Export to CSV</span>
         </button>
       </div>
 
@@ -136,7 +144,7 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>QuoteVault • Built with Python Flask, Vanilla JavaScript & HTML/CSS</p>
+      <p id="footerText">QuoteVault • Built with Python Flask, Vanilla JavaScript & HTML/CSS</p>
     </footer>
   </div>
 
